@@ -1,0 +1,304 @@
+#include <iostream>
+#include <string>
+#define TMAX 99
+using namespace std;
+
+typedef struct
+{
+    string titulo , autor , ISBN;
+    int quantExemAcer , quantDispEmprest;
+} Livro;
+
+
+typedef struct
+{
+    string dataDevo , ISBN, matricula ;
+} Emprestimo;
+
+bool checarStringNumerica ( string str ) {
+    for ( int i = 0 ; i < str.size ( ) ; i++ )
+        if ( !isdigit ( str.at ( i ) ) )
+            return false;
+    return true;
+}
+bool checarChar ( string aux ) {
+    if ( aux.size ( ) == 1 && checarStringNumerica ( aux ) )
+        return true;
+    return false;
+}
+char menu ( )
+{
+    string aux;
+    char op;
+    cout << endl << "1- Inclusao de um novo livro" << endl << "2- Consulta a um livro" << endl << "3- Exclusao de um livro" << endl << "4- Emprestimo de um exemplar" << endl << "5- Devolucao" << endl << "6- relatorio 1(livros do acervo)" << endl << "7- relatorio 2(emprestimos ativos)" << endl << "8- Sair" << endl << "Digite a opcao desejada: ";
+    getline ( cin , aux );
+    if ( checarChar ( aux ) ) {
+        op = aux.at ( 0 );
+        return op;
+    }
+    else
+        cout << "Input invalido";
+    return '0';
+}
+int checarQuantidadeExemp ( string aux ) {
+    int qnt;
+    if ( checarStringNumerica ( aux ) ) {
+        if ( stoi ( aux ) > 0 ) {
+            qnt = stoi ( aux );
+            return qnt;
+        }
+    }
+    cout << "Quantidade de livros invalida." << endl;
+    return -1;
+}
+bool checarSeStringEstaVazia ( string str ) {
+    if ( str == "" )
+        return true;
+    return false;
+}
+bool checarISBN ( int num_livros , string aux ) {
+    if ( !checarStringNumerica ( aux ) or aux.size ( ) != 13 )
+        return false;
+    return true;
+}
+void insereInfo ( int num_livros , Livro livro [ ] )
+{
+    string aux;
+    do {
+        cout << "Digite o titulo do livro: ";
+        getline ( cin , aux );
+    } while ( checarSeStringEstaVazia ( aux ) );
+    livro [ num_livros ].titulo = aux;
+    do {
+        cout << "Digite o nome do autor do livro: ";
+        getline ( cin , aux);
+    } while ( checarSeStringEstaVazia ( aux ) );
+    livro [ num_livros ].autor = aux;
+    do {
+        do {
+            cout << "Digite a quantidade de exemplares: ";
+            getline ( cin , aux );
+        } while ( checarSeStringEstaVazia ( aux ) );
+    } while ( checarQuantidadeExemp ( aux ) == -1 );
+    livro [ num_livros ].quantExemAcer = checarQuantidadeExemp ( aux );
+    livro [ num_livros ].quantDispEmprest = livro [ num_livros ].quantExemAcer;
+}
+int buscaBinaria ( Livro vet [ ] , string valorBusca , int inf , int sup )
+{
+    int meio;
+    if ( inf > sup )
+        return -1;
+
+    meio = ( inf + sup ) / 2;
+    if ( vet [ meio ].ISBN == valorBusca )
+        return meio;
+
+    if ( valorBusca < vet [ meio ].ISBN )
+        return buscaBinaria ( vet , valorBusca , inf , meio - 1 );
+
+    return buscaBinaria ( vet , valorBusca , meio + 1 , sup );
+
+}
+void mostra_Info ( int num_livros , Livro livro [ ] )
+{
+    string aux;
+    cout << "O ISBN do livro: " << livro [ num_livros ].ISBN << endl;
+    cout << "O titulo do livro: " << livro [ num_livros ].titulo << endl;
+    cout << "O nome do autor do livro: " << livro [ num_livros ].autor << endl;
+    cout << "A quantidade de exemplares: " << livro [ num_livros ].quantExemAcer << endl;
+    cout << "A quantidade disponivel para emprestimo: " << livro [ num_livros ].quantDispEmprest << endl;
+}
+
+void consulta_livro ( int num_livros , Livro acervo [ ] ) {
+    string aux;
+    int pos;
+    do {
+        cout << "Insira o ISBN do livro que deseja consultar: ";
+        getline ( cin , aux );
+    } while ( !checarISBN ( num_livros , aux ) );
+    pos = buscaBinaria ( acervo , aux , 0 , num_livros );
+    if ( pos != -1 )
+        mostra_Info ( pos , acervo );
+    else
+        cout << "Titulo inexistente";
+}
+
+void insereLivro ( int& num_livros , Livro acervo [ ] )
+{
+    int inf = 0 , sup = num_livros;
+    string aux;
+    cout << "Digite o codigo ISBN: ";
+    getline ( cin , aux );
+    if ( num_livros == 0 && checarISBN ( num_livros , aux ) )
+    {
+        acervo [ num_livros ].ISBN = aux;
+        insereInfo ( num_livros , acervo );
+        num_livros++;
+    }
+    else if ( buscaBinaria( acervo , aux , inf , sup ) == -1 && checarISBN ( num_livros , aux ) ){
+            acervo [ num_livros ].ISBN = aux;
+            insereInfo ( num_livros , acervo );
+            num_livros++;
+        }
+        else if ( !checarISBN ( num_livros , aux ) )
+            cout << "ISBN invalido";
+        else
+            cout << "ISBN ja cadastrado";
+}
+void relatorio_1 ( int num_livros , Livro acervo [ ] ) {
+    for ( int i = 0; i < num_livros; i++ ) {
+        mostra_Info ( i , acervo );
+        cout << endl;
+    }
+}
+void trocar ( Livro& a , Livro& b ) {
+    Livro temp = a;
+    a = b;
+    b = temp;
+}
+void trocarElem ( Livro acervo [ ] , int num_livros , int i ) {
+    if ( i == num_livros - 1 ) {
+        return;
+    }
+    if ( acervo [ i ].ISBN > acervo[ i + 1 ].ISBN ) {
+        trocar ( acervo [ i ] , acervo [ i + 1 ] );
+    }
+    trocarElem ( acervo , num_livros , i + 1 );
+}
+void ordenar ( Livro acervo [ ] , int num_livros )
+{
+    if ( num_livros == 1 ) {
+        return;
+    }
+    trocarElem (acervo , num_livros , 0 );
+    ordenar ( acervo , num_livros - 1 );
+}
+void moverElemParaExclusao ( int& num_livros , int pos , Livro acervo [ ] ) {
+    int i = pos;
+    if ( i > num_livros - 1 ) {
+        num_livros--;
+        return;
+    }
+    acervo [ i ] = acervo [ i + 1 ];
+    moverElemParaExclusao ( num_livros , i + 1 , acervo );
+}
+
+void ExclusaoDeLivro ( int& num_livros , Livro acervo [ ] ) {
+    string aux;
+    int pos;
+    do {
+        cout << "Insira o ISBN do livro que deseja excluir: ";
+        getline ( cin , aux );
+    } while ( !checarISBN ( num_livros , aux ) );
+    pos = buscaBinaria ( acervo , aux , 0 , num_livros );
+    if ( pos != -1 )
+        moverElemParaExclusao ( num_livros , pos , acervo );
+    else
+        cout << "Titulo inexistente";
+}
+
+void cadastroEmprestimo (int num_emprestimos,string aux, Emprestimo emprestimos[]){
+    cout<<"Digite a matricula do aluno/professor responsavel pelo emprestimo: ";
+    getline(cin,emprestimos[num_emprestimos].matricula);
+    cout<<"Digite a data da devolucao do exemplar do livro: ";
+    getline(cin,emprestimos[num_emprestimos].dataDevo);
+    emprestimos[num_emprestimos].ISBN=aux;
+}
+
+void emprestimoDeLivro (int& num_emprestimos, Emprestimo emprestimos[],int num_livros, Livro acervo[]){
+string aux;
+int pos;
+    do {
+        cout << "Insira o ISBN do livro que deseja emprestar: ";
+        getline ( cin , aux );
+    } while ( !checarISBN ( num_livros , aux ));
+    pos = buscaBinaria ( acervo, aux , 0 , num_livros );
+    if ( pos != -1 ){
+        if(acervo[pos].quantDispEmprest>0){
+            cadastroEmprestimo(num_emprestimos,aux, emprestimos);
+            cout<<"Emprestimo realizado. codigo: "<<num_emprestimos<<endl;
+            num_emprestimos++;
+            acervo[pos].quantDispEmprest-=1;
+            }
+        else
+            cout<<"Exemplar indisponivel para emprestimo";
+    }
+    else
+        cout << "Titulo inexistente";
+
+}
+void mostra_emprestimo (int num_emprestimos,Emprestimo emprestimos[]){
+
+    cout<<"A data de devolucao eh: "<<emprestimos[num_emprestimos].dataDevo<<endl;
+    cout<<"O ISBN do livro eh: "<<emprestimos[num_emprestimos].ISBN<<endl;
+    cout<<"A matricula do aluno/professor eh: "<<emprestimos[num_emprestimos].matricula<<endl;
+
+}
+
+void devolucaoDeExemplar (int& num_emprestimos, Emprestimo emprestimos[],int num_livros,Livro acervo[]){
+    int cod,pos;
+    cout<<"Digite o codigo de emprestimo do exemplar: ";
+    cin>>cod;
+    cin.ignore();
+    if(cod>num_emprestimos or cod<0)
+        cout<<"Registro inexistente";
+    else
+        if(emprestimos[cod].matricula=="-1")
+            cout<<"Devolucao ja realizada";
+            else{
+                mostra_emprestimo(cod,emprestimos);
+                emprestimos[cod].matricula="-1";
+                pos=buscaBinaria(acervo,emprestimos[cod].ISBN,0,num_livros);
+                acervo[pos].quantDispEmprest+=1;
+                cout<<"Devolução realizada";
+            }
+}
+
+void relatorio_2(int num_emprestimos , Emprestimo emprestimos [ ]){
+    for ( int i = 0; i < num_emprestimos; i++ ) {
+        mostra_emprestimo ( i , emprestimos );
+        cout << endl;
+    }
+}
+
+int main ( )
+{
+
+    Livro acervo [ TMAX ];
+    Emprestimo emprestimos [ TMAX ];
+    int num_livros = 0 , posicao , pos_Elem , num_emprestimos = 0;
+    char op;
+    do
+    {
+        op = menu ( );
+        switch ( op )
+        {
+            case '1':
+                insereLivro ( num_livros , acervo );
+                ordenar ( acervo , num_livros );//posicao=pesquisaPorISBN(num_livros,acervo,acervo[num_livros].ISBN);
+                break;
+            case '2':
+                consulta_livro ( num_livros , acervo );//consultar um livro por ISBN
+                break;
+            case '3':
+                ExclusaoDeLivro ( num_livros , acervo );//exclusão de um livro
+                break;
+            case '4':
+                emprestimoDeLivro (num_emprestimos, emprestimos, num_livros, acervo);//empréstimo de um exemplar
+                break;
+            case '5':
+                devolucaoDeExemplar(num_emprestimos,emprestimos,num_livros,acervo);//devolução
+                break;
+            case '6':
+                relatorio_1 ( num_livros , acervo );//relatório1(livros do acervo)
+                break;
+            case '7':
+                relatorio_2(num_emprestimos,emprestimos);//relatório2(empréstimos ativos)
+                break;
+            case '8':
+                cout<<endl<<"Prototipo encerrado"<<endl;//saida
+                break;
+        }
+    } while ( op != '8' );
+    return 0;
+}
